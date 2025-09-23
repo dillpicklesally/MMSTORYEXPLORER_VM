@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  story-explorer:
+    image: nginx:alpine
+    container_name: story-explorer
+    ports:
+      - "8180:80"
+      - "8543:443"
+    volumes:
+      # Map your app files
+      - ./:/usr/share/nginx/html
+      # Map nginx configuration
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Map SSL certificates
+      - ./ssl:/etc/ssl:ro
+      # Map the NFS archive folder
+      - /mnt/user/MM/AutoExport:/var/www/archives:ro
+    restart: unless-stopped

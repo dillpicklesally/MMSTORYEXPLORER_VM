@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM Story Archive Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="performance-optimizations.css">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="avatar-fix.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-logo">
+                    <div class="loading-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                    </div>
+                    <div class="loading-rings">
+                        <div class="loading-ring ring-1"></div>
+                        <div class="loading-ring ring-2"></div>
+                    </div>
+                </div>
+                <div class="loading-text">MM Story Archive Explorer</div>
+                <div class="loading-subtitle">Processing files...</div>
+            </div>
+        </div>
+        
+        <!-- NFS Connection Overlay -->
+        <div id="nfs-loading-overlay" class="nfs-loading-overlay">
+            <div class="nfs-loading-content">
+                <div class="nfs-loading-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </div>
+                <div class="nfs-loading-text">Connecting to Story Archive</div>
+                <div class="nfs-loading-subtitle">Please wait...</div>
+                <div class="nfs-loading-instruction">If prompted, please click "Upload".</div>
+                <div class="nfs-loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+        
+        
+        <!-- File Picker View -->
+        <div id="file-picker-view" class="view active">
+            <div class="container">
+                <div class="app-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                </div>
+                <h1 class="app-title">MM Story Archive Explorer</h1>
+                <p class="subtitle">Select your archive folder to begin</p>
+                <div class="button-group">
+                    <button class="primary-button" id="auto-load-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9,22 9,12 15,12 15,22"></polyline>
+                        </svg>
+                        <span>Load Default Archive</span>
+                    </button>
+                    <div style="color: var(--text-secondary); font-size: 0.8rem; margin: 0.5rem 0;">or</div>
+                    <label for="folder-input" class="file-input-label">
+                        <div class="file-input-button">
+                            <svg class="folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>Choose Different Folder</span>
+                        </div>
+                        <input type="file" id="folder-input" webkitdirectory directory multiple />
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Home View -->
+        <div id="home-view" class="view">
+            <div class="container">
+                <header class="app-header">
+                    <div class="header-title-section">
+                        <div class="header-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                <path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                            </svg>
+                        </div>
+                        <h1 class="app-title">MM Story Archive Explorer</h1>
+                        <button class="theme-toggle-btn" id="theme-toggle" title="Toggle dark/light mode">
+                            <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                        </button>
+                        <button class="about-btn" id="about-btn" title="About">
+                            <span class="about-btn-text">?</span>
+                        </button>
+                    </div>
+                    <div class="view-toggle">
+                        <button class="toggle-btn active" data-view="dates">Stories by Date</button>
+                        <button class="toggle-btn" data-view="users">Stories by User</button>
+                        <button class="toggle-btn" data-view="profiles">Profile Snapshots</button>
+                        <button class="toggle-btn" data-view="reshare-analytics">Reshare Analytics</button>
+                        <button class="toggle-btn" data-view="reshares-by-user">Reshares by User</button>
+                        <button class="toggle-btn" data-view="reshared-users-stories">Reshared Users' Stories</button>
+                    </div>
+                </header>
+                
+                <div id="dates-view" class="content-view active">
+                    <div class="view-controls">
+                        <h2 class="page-title">Stories by Date</h2>
+                        <div class="sort-controls">
+                            <label class="sort-label">Sort:</label>
+                            <div class="sort-buttons">
+                                <button class="sort-btn active" data-sort="newest">Newest First</button>
+                                <button class="sort-btn" data-sort="oldest">Oldest First</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="dates-list" class="dates-grid"></div>
+                </div>
+                
+                <div id="users-view" class="content-view">
+                    <div class="view-controls">
+                        <h2 class="page-title">Stories by User</h2>
+                        <div class="sort-controls">
+                            <label class="sort-label">Sort:</label>
+                            <div class="sort-buttons">
+                                <button class="sort-btn active" data-sort="a-z">A-Z</button>
+                                <button class="sort-btn" data-sort="z-a">Z-A</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="users-list" class="users-list"></div>
+                </div>
+                
+                <div id="profiles-view" class="content-view">
+                    <div class="view-controls">
+                        <h2 class="page-title">Profile Snapshots</h2>
+                        <div class="sort-controls">
+                            <label class="sort-label">Sort:</label>
+                            <div class="sort-buttons">
+                                <button class="sort-btn active" data-sort="a-z">A-Z</button>
+                                <button class="sort-btn" data-sort="z-a">Z-A</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="profiles-list" class="profiles-list"></div>
+                </div>
+                
+                <div id="reshare-analytics-view" class="content-view">
+                    <div class="view-controls">
+                        <h2 class="page-title">Reshare Analytics</h2>
+                        <div></div> <!-- Empty div for spacing -->
+                    </div>
+                    <div class="analytics-content">
+                        <div class="analytics-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="total-reshares">0</div>
+                                <div class="stat-label">Total Reshares</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="unique-reshares">0</div>
+                                <div class="stat-label">Unique Users</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="avg-reshares-per-user">0</div>
+                                <div class="stat-label">Avg per User</div>
+                            </div>
+                        </div>
+                        <div class="analytics-charts">
+                            <div class="chart-section">
+                                <h3>Most Frequently Reshared Users</h3>
+                                <div id="frequency-chart" class="frequency-chart"></div>
+                            </div>
+                            <div class="chart-section">
+                                <h3>Reshare Mentions Over Time (Top 15)</h3>
+                                <canvas id="timeline-chart" class="timeline-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="reshares-by-user-view" class="content-view">
+                    <div class="view-controls">
+                        <h2 class="page-title">Reshares by User</h2>
+                        <div class="sort-controls">
+                            <label class="sort-label">Sort:</label>
+                            <div class="sort-buttons">
+                                <button class="sort-btn active" data-sort="a-z">A-Z</button>
+                                <button class="sort-btn" data-sort="z-a">Z-A</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="reshares-list" class="users-list"></div>
+                </div>
+                
+                <div id="reshared-users-stories-view" class="content-view">
+                    <div class="view-controls">
+                        <h2 class="page-title">Reshared Users' Stories</h2>
+                        <div class="sort-controls">
+                            <label class="sort-label">Sort:</label>
+                            <div class="sort-buttons">
+                                <button class="sort-btn active" data-sort="newest">Newest First</button>
+                                <button class="sort-btn" data-sort="oldest">Oldest First</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="reshared-users-stories-list" class="dates-list"></div>
+                </div>
+                
+                <div id="date-users-view" class="content-view">
+                    <div class="date-users-header">
+                        <button class="back-btn">← Back to Dates</button>
+                        <h2 class="date-title"></h2>
+                    </div>
+                    <div id="date-users-list" class="users-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Story Modal -->
+        <div id="story-modal" class="modal">
+            <div class="modal-content">
+                <div class="story-viewer">
+                    <div class="story-progress">
+                        <div class="progress-segments"></div>
+                    </div>
+                    <div class="story-header">
+                        <div class="story-user-info">
+                            <div class="avatar-circle"></div>
+                            <div class="user-details">
+                                <span class="username"></span>
+                                <div class="reshare-info" style="display: none;">
+                                    <svg class="reshare-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 1l4 4-4 4"></path>
+                                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                        <path d="M7 23l-4-4 4-4"></path>
+                                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                    </svg>
+                                    <span class="reshare-username"></span>
+                                </div>
+                                <span class="story-date"></span>
+                            </div>
+                        </div>
+                        <button class="close-btn">&times;</button>
+                    </div>
+                    <div class="story-media-container">
+                        <button class="nav-btn prev">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15,18 9,12 15,6"></polyline>
+                            </svg>
+                        </button>
+                        <div class="story-media"></div>
+                        <button class="nav-btn next">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9,18 15,12 9,6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Export controls positioned outside modal content -->
+            <div class="export-controls">
+                <div class="export-label">Export...</div>
+                <button class="export-btn" title="Export Options">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
+                
+                <!-- Export dropdown menu -->
+                <div class="export-dropdown">
+                    <div class="export-option" data-export-type="original">
+                        <div class="export-option-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="export-option-content">
+                            <div class="export-option-title">Export Original File</div>
+                            <div class="export-option-desc">Download the original file from archive</div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-option" data-export-type="recording">
+                        <div class="export-option-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="export-option-content">
+                            <div class="export-option-title">Export Screen Recording</div>
+                            <div class="export-option-desc">Video with overlay and username</div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-option" data-export-type="screenshot">
+                        <div class="export-option-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </div>
+                        <div class="export-option-content">
+                            <div class="export-option-title">Export Screenshot</div>
+                            <div class="export-option-desc">PNG image with overlay and username</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export Toast Notification -->
+        <div id="export-toast" class="export-toast">
+            <div class="toast-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"></path>
+                </svg>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">Exporting Story</div>
+                <div class="toast-message">Preparing video export...</div>
+                <div class="toast-progress">
+                    <div class="toast-progress-bar">
+                        <div class="toast-progress-fill"></div>
+                    </div>
+                    <div class="toast-progress-text">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- About Modal -->
+        <div id="about-modal" class="about-modal">
+            <div class="about-modal-content">
+                <div class="about-modal-header">
+                    <button class="about-close-btn">&times;</button>
+                </div>
+                <div class="about-modal-body">
+                    <div class="about-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                    </div>
+                    <h2 class="about-title">Instagram Story Explorer</h2>
+                    <p class="about-subtitle">2025 Medical Medium</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FFmpeg WASM (with fallback) -->
+    <script>
+        // Load FFmpeg with error handling
+        window.ffmpegAvailable = false;
+        
+        function loadFFmpegScripts() {
+            return new Promise((resolve, reject) => {
+                // Load the main FFmpeg library
+                const script1 = document.createElement('script');
+                script1.src = '/ffmpeg/ffmpeg.js';
+                script1.onload = () => {
+                    // Load the util library
+                    const script2 = document.createElement('script');
+                    script2.src = '/ffmpeg/util.js';
+                    script2.onload = () => {
+                        // Wait for global variables and check multiple possible exports
+                        let attempts = 0;
+                        const maxAttempts = 20;
+                        
+                        const checkGlobals = () => {
+                            attempts++;
+                            
+                            // Check different possible global variable names
+                            const ffmpegGlobal = window.FFmpeg || window.ffmpeg || (window.FFmpegWASM && window.FFmpegWASM.FFmpeg);
+                            const utilGlobal = window.FFmpegUtil || window.ffmpegUtil || (window.FFmpegWASM && window.FFmpegWASM.fetchFile);
+                            
+                            if (ffmpegGlobal && utilGlobal) {
+                                window.FFmpegWASM = { FFmpeg: ffmpegGlobal };
+                                window.FFmpegUtil = { fetchFile: utilGlobal.fetchFile || utilGlobal };
+                                resolve();
+                                return;
+                            }
+                            
+                            // If not available yet and we haven't exceeded max attempts, try again
+                            if (attempts < maxAttempts) {
+                                setTimeout(checkGlobals, 100);
+                            } else {
+                                reject(new Error('FFmpeg globals not available after ' + maxAttempts + ' attempts'));
+                            }
+                        };
+                        
+                        checkGlobals();
+                    };
+                    script2.onerror = () => reject(new Error('Failed to load FFmpeg util'));
+                    document.head.appendChild(script2);
+                };
+                script1.onerror = () => reject(new Error('Failed to load FFmpeg'));
+                document.head.appendChild(script1);
+            });
+        }
+        
+        // Try to load FFmpeg
+        loadFFmpegScripts()
+            .then(() => {
+                window.ffmpegAvailable = true;
+                console.log('FFmpeg loaded successfully from local files');
+            })
+            .catch((error) => {
+                console.warn('FFmpeg failed to load, using Canvas fallback:', error);
+                window.ffmpegAvailable = false;
+            });
+    </script>
+    
+    <!-- App Scripts -->
+    <script src="config.js"></script>
+    <script src="export-handler.js"></script>
+    <script src="canvas-export-handler.js"></script>
+    <script src="server-export-handler.js"></script>
+    <script src="performance.js"></script>
+    <script src="theme-toggle.js"></script>
+    <script src="app.js"></script>
+    <script src="chart-theme.js"></script>
+</body>
+</html>

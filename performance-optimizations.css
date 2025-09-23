@@ -1,0 +1,351 @@
+/* Performance Optimizations for Story Archive Explorer */
+
+/* 1. Replace backdrop-filter with matching gradient backgrounds */
+.user-list-item,
+.date-card,
+.date-list-item,
+.profile-list-item {
+    /* Gradient that matches the dark background with subtle color hints */
+    background: linear-gradient(135deg, 
+        rgba(15, 15, 18, 0.98) 0%, 
+        rgba(20, 15, 25, 0.95) 50%,
+        rgba(15, 15, 20, 0.98) 100%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* Add subtle inner glow for depth */
+    box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 0 20px rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Different subtle gradients for each view to maintain visual distinction */
+#dates-view .date-card {
+    background: linear-gradient(135deg,
+        rgba(15, 15, 20, 0.98) 0%,
+        rgba(18, 15, 22, 0.95) 100%) !important;
+}
+
+#users-view .user-list-item {
+    background: linear-gradient(135deg,
+        rgba(20, 15, 18, 0.98) 0%,
+        rgba(22, 15, 20, 0.95) 100%) !important;
+}
+
+#profiles-view .profile-list-item {
+    background: linear-gradient(135deg,
+        rgba(15, 18, 22, 0.98) 0%,
+        rgba(15, 20, 24, 0.95) 100%) !important;
+}
+
+/* Frequency items in analytics */
+.frequency-item {
+    background: linear-gradient(135deg,
+        rgba(16, 18, 16, 0.98) 0%,
+        rgba(18, 20, 18, 0.95) 100%) !important;
+    backdrop-filter: none !important;
+}
+
+/* Keep backdrop-filter only for header and modals */
+.app-header,
+.modal-content,
+.loading-content,
+#file-picker-view .container {
+    /* These elements don't scroll, so backdrop-filter is acceptable */
+}
+
+/* 2. Optimize hover states with subtle gradient shifts */
+.user-list-item:hover,
+.date-card:hover,
+.date-list-item:hover,
+.profile-list-item:hover,
+.frequency-item:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, 
+        rgba(25, 25, 30, 0.98) 0%, 
+        rgba(30, 25, 35, 0.95) 50%,
+        rgba(25, 25, 30, 0.98) 100%) !important;
+    box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 0 30px rgba(255, 255, 255, 0.03) !important;
+}
+
+/* 3. Use CSS containment for list items */
+.user-list-item,
+.date-list-item,
+.profile-list-item,
+.frequency-item {
+    contain: layout style paint;
+}
+
+/* 4. Optimize infinite animations */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* 5. Use transform3d for hardware acceleration on scrollable containers */
+.users-list,
+.dates-grid,
+.dates-list,
+.profiles-list,
+.frequency-chart,
+.user-dates-container,
+.date-users-container,
+.profile-dates-container {
+    transform: translate3d(0, 0, 0);
+    will-change: scroll-position;
+}
+
+/* 6. Optimize transitions - only transition specific properties */
+.user-list-item,
+.date-card,
+.toggle-btn,
+.sort-btn {
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    /* Remove 'all' transitions */
+}
+
+/* 7. Reduce paint operations on scroll */
+.user-dates-container::-webkit-scrollbar,
+.date-users-container::-webkit-scrollbar,
+.profile-dates-container::-webkit-scrollbar {
+    transform: translateZ(0);
+}
+
+/* 8. Optimize background animations - disabled by default for performance */
+#file-picker-view::before,
+#home-view::before {
+    /* Static gradient background for better performance */
+    animation: none !important;
+    /* Optional: Enable animation only on high-end devices */
+}
+
+/* Enable animations only if user prefers motion */
+@media (prefers-reduced-motion: no-preference) and (min-width: 1200px) {
+    #file-picker-view::before,
+    #home-view::before {
+        animation: backgroundShiftOptimized 30s ease-in-out infinite;
+    }
+}
+
+@keyframes backgroundShiftOptimized {
+    0%, 100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    25% {
+        transform: translate3d(-30px, -25px, 0) scale(1.05);
+    }
+    50% {
+        transform: translate3d(25px, -20px, 0) scale(0.95);
+    }
+    75% {
+        transform: translate3d(-15px, 30px, 0) scale(1.08);
+    }
+}
+
+/* 9. Reduce complexity of view overlays */
+.content-view::after {
+    /* Disable overlay animations during scroll */
+    animation: none !important;
+    opacity: 0.5 !important;
+    transition: none !important;
+}
+
+/* 10. Optimize modal animations */
+.modal {
+    will-change: opacity;
+}
+
+.modal-content {
+    will-change: transform;
+}
+
+/* 11. Use CSS Grid with fixed dimensions where possible */
+.dates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-auto-rows: minmax(120px, auto);
+}
+
+/* 12. Batch expensive properties */
+.loading-ring,
+.loading-icon svg {
+    will-change: transform;
+}
+
+/* Clean up will-change after animations */
+.loading-overlay:not(.active) .loading-ring,
+.loading-overlay:not(.active) .loading-icon svg {
+    will-change: auto;
+}
+
+/* 13. Replace complex gradients with simpler ones */
+.user-avatar,
+.user-list-avatar,
+.date-inline-avatar,
+.profile-list-avatar,
+.frequency-avatar {
+    background: #833ab4; /* Solid color fallback */
+    background-image: linear-gradient(135deg, #833ab4, #c13584);
+}
+
+/* 14. Optimize button interactions */
+.nav-btn,
+.close-btn,
+.export-btn {
+    will-change: transform, opacity;
+}
+
+/* 15. Use passive event listeners hint */
+.scroll-container {
+    touch-action: pan-y;
+}
+
+/* 17. Disable hover effects during scroll */
+.is-scrolling .user-list-item:hover,
+.is-scrolling .date-card:hover,
+.is-scrolling .frequency-item:hover,
+.is-scrolling .date-list-item:hover,
+.is-scrolling .profile-list-item:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    border-color: inherit !important;
+}
+
+/* 18. Reduce motion preference support */
+@media (prefers-reduced-motion: reduce) {
+    #file-picker-view::before,
+    #home-view::before {
+        animation: none !important;
+    }
+    
+    .loading-ring,
+    .loading-icon svg {
+        animation: none !important;
+    }
+}
+
+/* 19. Style nested items with matching backgrounds */
+.user-inline-date,
+.date-inline-user,
+.profile-inline-date {
+    background: linear-gradient(135deg,
+        rgba(10, 10, 12, 0.95) 0%,
+        rgba(12, 10, 14, 0.92) 100%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.user-inline-date:hover,
+.date-inline-user:hover,
+.profile-inline-date:hover {
+    background: linear-gradient(135deg,
+        rgba(18, 18, 22, 0.95) 0%,
+        rgba(20, 18, 24, 0.92) 100%) !important;
+}
+
+/* 20. Chart sections with solid backgrounds */
+.chart-section {
+    background: linear-gradient(135deg,
+        rgba(12, 12, 15, 0.98) 0%,
+        rgba(15, 12, 18, 0.95) 100%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 21. Main body gradient to tie everything together */
+body {
+    background: #000000;
+    background: linear-gradient(135deg, 
+        #000000 0%, 
+        #0a0a0a 50%,
+        #050505 100%);
+    min-height: 100vh;
+}
+
+/* 22. Stat cards with matching gradients */
+.stat-card {
+    background: linear-gradient(135deg,
+        rgba(15, 15, 20, 0.98) 0%,
+        rgba(20, 15, 25, 0.95) 100%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 23. Keep subtle transparency only on non-scrolling elements */
+.app-header {
+    background: rgba(10, 10, 12, 0.85) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+}
+
+/* 24. Buttons with solid backgrounds */
+.toggle-btn {
+    background: linear-gradient(135deg,
+        rgba(20, 20, 25, 0.9) 0%,
+        rgba(25, 20, 30, 0.85) 100%) !important;
+    backdrop-filter: none !important;
+}
+
+.toggle-btn:hover {
+    background: linear-gradient(135deg,
+        rgba(30, 30, 35, 0.9) 0%,
+        rgba(35, 30, 40, 0.85) 100%) !important;
+}
+
+.toggle-btn.active {
+    background: linear-gradient(135deg,
+        rgba(40, 40, 50, 0.9) 0%,
+        rgba(50, 40, 60, 0.85) 100%) !important;
+}
+
+/* 25. Avatar scaling effects - performance optimized */
+.user-avatar,
+.user-list-avatar,
+.date-inline-avatar,
+.profile-list-avatar,
+.frequency-avatar {
+    transition: transform 0.2s ease;
+    will-change: transform;
+}
+
+.user-list-item:hover .user-list-avatar,
+.date-inline-user:hover .date-inline-avatar,
+.profile-list-item:hover .profile-list-avatar,
+.frequency-item:hover .frequency-avatar {
+    transform: scale(1.1);
+}
+
+/* Remove will-change when not hovering to save resources */
+.user-list-item:not(:hover) .user-list-avatar,
+.date-inline-user:not(:hover) .date-inline-avatar,
+.profile-list-item:not(:hover) .profile-list-avatar,
+.frequency-item:not(:hover) .frequency-avatar {
+    will-change: auto;
+}
+
+/* Disable avatar scaling during scroll for performance */
+.is-scrolling .user-list-item:hover .user-list-avatar,
+.is-scrolling .date-inline-user:hover .date-inline-avatar,
+.is-scrolling .profile-list-item:hover .profile-list-avatar,
+.is-scrolling .frequency-item:hover .frequency-avatar {
+    transform: none !important;
+}
+
+/* 16. Reduce repaints on expandable items */
+.user-dates-container,
+.date-users-container,
+.profile-dates-container {
+    will-change: max-height;
+}
+
+.user-list-item:not(.expanded) .user-dates-container,
+.date-list-item:not(.expanded) .date-users-container,
+.profile-list-item:not(.expanded) .profile-dates-container {
+    will-change: auto;
+}
