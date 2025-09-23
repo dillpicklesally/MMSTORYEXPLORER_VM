@@ -902,23 +902,20 @@ class StoryArchiveExplorer {
             sortedDates = Array.from(this.archives.keys()).sort((a, b) => b.localeCompare(a));
         }
         
-        // Get today's date in YYYYMMDD format
-        const today = new Date();
-        const todayString = today.getFullYear() + 
-                           String(today.getMonth() + 1).padStart(2, '0') + 
-                           String(today.getDate()).padStart(2, '0');
+        // Get the most recent date (first in sorted array when sorted newest first)
+        const mostRecentDate = sortedDates.length > 0 ? sortedDates[0] : null;
         
         sortedDates.forEach(date => {
             const stories = this.archives.get(date);
             
-            // Check if this is today's date
-            const isToday = date === todayString;
+            // Check if this is the most recent date (represents "Last 24 Hours")
+            const isLast24Hours = date === mostRecentDate;
             
             // Format YYYYMMDD to readable date
             const year = date.substring(0, 4);
             const month = date.substring(4, 6);
             const day = date.substring(6, 8);
-            const formattedDate = isToday ? 'Last 24 Hours' : new Date(`${year}-${month}-${day}`).toLocaleDateString('en-US', {
+            const formattedDate = isLast24Hours ? 'Last 24 Hours' : new Date(`${year}-${month}-${day}`).toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
@@ -947,7 +944,7 @@ class StoryArchiveExplorer {
             
             // Create expandable date item
             const dateItem = document.createElement('div');
-            dateItem.className = isToday ? 'date-list-item last-24-hours' : 'date-list-item';
+            dateItem.className = isLast24Hours ? 'date-list-item last-24-hours' : 'date-list-item';
             
             const uniqueUsers = new Set(stories.map(s => s.username));
             
