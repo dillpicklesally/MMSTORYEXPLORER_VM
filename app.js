@@ -906,16 +906,26 @@ class StoryArchiveExplorer {
         const mostRecentDate = sortedDates.length > 0 ? sortedDates[0] : null;
         
         sortedDates.forEach(date => {
-            const stories = this.archives.get(date);
+            let stories = this.archives.get(date);
             
-            // Check if this is the most recent date (represents "Last 24 Hours")
-            const isLast24Hours = date === mostRecentDate;
+            // Check if this is the most recent date (represents "Today")
+            const isToday = date === mostRecentDate;
+            
+            // If this is the "Today" folder, filter to only show stories from today (since midnight)
+            if (isToday && this.isFromToday(date)) {
+                stories = stories.filter(story => this.isStoryFromToday(story.filename));
+            }
+            
+            // Skip if no stories remain after filtering
+            if (stories.length === 0) {
+                return;
+            }
             
             // Format YYYYMMDD to readable date
             const year = date.substring(0, 4);
             const month = date.substring(4, 6);
             const day = date.substring(6, 8);
-            const formattedDate = isLast24Hours ? 'Last 24 Hours' : new Date(`${year}-${month}-${day}`).toLocaleDateString('en-US', {
+            const formattedDate = isToday ? 'Today' : new Date(`${year}-${month}-${day}`).toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
@@ -944,7 +954,7 @@ class StoryArchiveExplorer {
             
             // Create expandable date item
             const dateItem = document.createElement('div');
-            dateItem.className = isLast24Hours ? 'date-list-item last-24-hours' : 'date-list-item';
+            dateItem.className = isToday ? 'date-list-item last-24-hours' : 'date-list-item';
             
             const uniqueUsers = new Set(stories.map(s => s.username));
             
@@ -1263,14 +1273,14 @@ class StoryArchiveExplorer {
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
         
         if (diffDays === 0) {
-            // For "Last 24 Hours" stories, try to show relative time if filename is available
-            if (filename && this.isFromLast24Hours(dateString)) {
+            // For "Today" stories, try to show relative time if filename is available
+            if (filename && this.isFromToday(dateString)) {
                 const storyTimestamp = this.extractTimestampFromFilename(filename);
                 if (storyTimestamp) {
                     return this.formatRelativeTime(storyTimestamp);
                 }
             }
-            return 'last 24 hrs';
+            return 'today';
         } else if (diffDays === 1) {
             return 'yesterday';
         } else if (diffDays > 1 && diffDays <= 7) {
@@ -1325,8 +1335,8 @@ class StoryArchiveExplorer {
         }
     }
     
-    isFromLast24Hours(dateString) {
-        // Due to midnight download timing, "Last 24 Hours" stories are stored in tomorrow's date folder
+    isFromToday(dateString) {
+        // Due to midnight download timing, "Today" stories are stored in tomorrow's date folder
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1335,6 +1345,21 @@ class StoryArchiveExplorer {
                               String(tomorrow.getMonth() + 1).padStart(2, '0') + 
                               String(tomorrow.getDate()).padStart(2, '0');
         return dateString === tomorrowString;
+    }
+    
+    isStoryFromToday(filename) {
+        // Extract timestamp from filename and check if it's from today (since midnight)
+        const storyTimestamp = this.extractTimestampFromFilename(filename);
+        if (!storyTimestamp) {
+            return false; // If no timestamp, exclude from "Today"
+        }
+        
+        // Get today's midnight
+        const today = new Date();
+        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        
+        // Check if story timestamp is after today's midnight
+        return storyTimestamp >= todayMidnight;
     }
     
     toggleView(event) {
