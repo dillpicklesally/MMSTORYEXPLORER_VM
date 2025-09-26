@@ -837,28 +837,28 @@ class StoryArchiveExplorer {
             return null;
         }
         
-        // Look for reshare pattern in filename
-        // Updated regex to capture everything until the next _reshare_ or file extension (including periods in usernames)
-        const reshareMatches = filename.match(/_reshare_([^_]+?)(?=_reshare_|\.\w+$)/g);
-        if (!reshareMatches) {
-            // Fallback: try to match reshare pattern at the end of filename
-            const singleReshareMatch = filename.match(/_reshare_([^_]+?)(?=\.\w+$)/);
-            if (singleReshareMatch) {
-                return {
-                    originalUser: singleReshareMatch[1],
-                    reshareCount: 1
-                };
-            }
+        // Find the last occurrence of _reshare_ in the filename
+        const reshareIndex = filename.lastIndexOf('_reshare_');
+        if (reshareIndex === -1) {
             return null;
         }
         
-        // Extract the last reshare username (most recent in chain)
-        const lastReshare = reshareMatches[reshareMatches.length - 1];
-        const reshareUsername = lastReshare.replace('_reshare_', '');
+        // Extract everything after _reshare_ until the file extension
+        const afterReshare = filename.substring(reshareIndex + '_reshare_'.length);
+        const dotIndex = afterReshare.lastIndexOf('.');
+        
+        if (dotIndex === -1) {
+            return null;
+        }
+        
+        const reshareUsername = afterReshare.substring(0, dotIndex);
+        
+        // Count total reshares in filename
+        const reshareCount = (filename.match(/_reshare_/g) || []).length;
         
         return {
             originalUser: reshareUsername,
-            reshareCount: reshareMatches.length
+            reshareCount: reshareCount
         };
     }
     
