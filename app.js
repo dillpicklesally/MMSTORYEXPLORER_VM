@@ -1247,7 +1247,7 @@ class StoryArchiveExplorer {
         return null;
     }
     
-    formatStoryDate(dateString) {
+    formatStoryDate(dateString, filename = null) {
         const year = dateString.substring(0, 4);
         const month = dateString.substring(4, 6);
         const day = dateString.substring(6, 8);
@@ -1263,6 +1263,13 @@ class StoryArchiveExplorer {
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
         
         if (diffDays === 0) {
+            // For "Last 24 Hours" stories, try to show relative time if filename is available
+            if (filename && this.isFromLast24Hours(dateString)) {
+                const storyTimestamp = this.extractTimestampFromFilename(filename);
+                if (storyTimestamp) {
+                    return this.formatRelativeTime(storyTimestamp);
+                }
+            }
             return 'last 24 hrs';
         } else if (diffDays === 1) {
             return 'yesterday';
@@ -1274,6 +1281,57 @@ class StoryArchiveExplorer {
             const options = { month: 'short', day: 'numeric' };
             return storyDate.toLocaleDateString('en-US', options);
         }
+    }
+    
+    extractTimestampFromFilename(filename) {
+        // Look for pattern: YYYYMMDD_HHMMSS in filename
+        const timestampMatch = filename.match(/(\d{8})_(\d{6})/);
+        if (!timestampMatch) {
+            return null;
+        }
+        
+        const dateStr = timestampMatch[1]; // YYYYMMDD
+        const timeStr = timestampMatch[2]; // HHMMSS
+        
+        const year = parseInt(dateStr.substring(0, 4));
+        const month = parseInt(dateStr.substring(4, 6)) - 1; // Month is 0-indexed
+        const day = parseInt(dateStr.substring(6, 8));
+        const hour = parseInt(timeStr.substring(0, 2));
+        const minute = parseInt(timeStr.substring(2, 4));
+        const second = parseInt(timeStr.substring(4, 6));
+        
+        return new Date(year, month, day, hour, minute, second);
+    }
+    
+    formatRelativeTime(storyTimestamp) {
+        const now = new Date();
+        const diffMs = now - storyTimestamp;
+        
+        // Convert to different time units
+        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffMinutes < 1) {
+            return 'just now';
+        } else if (diffMinutes < 60) {
+            return `${diffMinutes}m ago`;
+        } else if (diffHours < 24) {
+            return `${diffHours}h ago`;
+        } else if (diffDays === 1) {
+            return '1d ago';
+        } else {
+            return `${diffDays}d ago`;
+        }
+    }
+    
+    isFromLast24Hours(dateString) {
+        // Check if the date string matches today's date
+        const today = new Date();
+        const todayString = today.getFullYear() + 
+                           String(today.getMonth() + 1).padStart(2, '0') + 
+                           String(today.getDate()).padStart(2, '0');
+        return dateString === todayString;
     }
     
     toggleView(event) {
@@ -1523,7 +1581,7 @@ class StoryArchiveExplorer {
         // Show date only when viewing by username (not by date)
         if (this.groupedStories.length === 1) {
             // Single user view - show the date
-            storyDate.textContent = this.formatStoryDate(story.date);
+            storyDate.textContent = this.formatStoryDate(story.date, story.filename);
             storyDate.style.display = 'block';
         } else {
             // Multiple users by date - hide the date
