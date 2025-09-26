@@ -1326,12 +1326,15 @@ class StoryArchiveExplorer {
     }
     
     isFromLast24Hours(dateString) {
-        // Check if the date string matches today's date
+        // Due to midnight download timing, "Last 24 Hours" stories are stored in tomorrow's date folder
         const today = new Date();
-        const todayString = today.getFullYear() + 
-                           String(today.getMonth() + 1).padStart(2, '0') + 
-                           String(today.getDate()).padStart(2, '0');
-        return dateString === todayString;
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const tomorrowString = tomorrow.getFullYear() + 
+                              String(tomorrow.getMonth() + 1).padStart(2, '0') + 
+                              String(tomorrow.getDate()).padStart(2, '0');
+        return dateString === tomorrowString;
     }
     
     toggleView(event) {
