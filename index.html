@@ -89,6 +89,37 @@
 
         <!-- Home View -->
         <div id="home-view" class="view">
+            <!-- Update Status Bubble -->
+            <div id="update-status-bubble" class="update-status-bubble">
+                <div class="update-status-header">
+                    <span class="update-status-title">📊 Update Schedule</span>
+                    <button class="update-status-minimize" onclick="toggleUpdateStatus()">−</button>
+                </div>
+                <div class="update-status-content">
+                    <div class="update-group">
+                        <div class="update-group-title">🩺 Medical Medium</div>
+                        <div class="update-times">
+                            <div class="update-time">Last: <span id="mm-last-update">Calculating...</span></div>
+                            <div class="update-time">Next: <span id="mm-next-update">Calculating...</span></div>
+                        </div>
+                    </div>
+                    <div class="update-group">
+                        <div class="update-group-title">⭐ VIP List</div>
+                        <div class="update-times">
+                            <div class="update-time">Last: <span id="vip-last-update">Calculating...</span></div>
+                            <div class="update-time">Next: <span id="vip-next-update">Calculating...</span></div>
+                        </div>
+                    </div>
+                    <div class="update-group">
+                        <div class="update-group-title">🔁 Reshared Users</div>
+                        <div class="update-times">
+                            <div class="update-time">Last: <span id="reshare-last-update">Calculating...</span></div>
+                            <div class="update-time">Next: <span id="reshare-next-update">Calculating...</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="container">
                 <header class="app-header">
                     <div class="header-title-section">

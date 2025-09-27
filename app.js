@@ -13,6 +13,7 @@ class StoryArchiveExplorer {
         this.exportHandler = null; // Will be initialized based on availability
         
         this.initializeEventListeners();
+        this.initializeUpdateStatus();
     }
     
     initializeEventListeners() {
@@ -3901,6 +3902,144 @@ class StoryArchiveExplorer {
                 ctx.fillText(formattedDate, x, canvas.height - padding + 15);
             });
         }
+    }
+    
+    initializeUpdateStatus() {
+        this.updateScheduleInfo();
+        // Update every minute
+        setInterval(() => this.updateScheduleInfo(), 60000);
+    }
+    
+    updateScheduleInfo() {
+        const now = new Date();
+        
+        // Medical Medium schedule: 7:30 AM, 4:30 PM, 11:30 PM
+        const mmSchedule = [
+            { hour: 7, minute: 30 },
+            { hour: 16, minute: 30 },
+            { hour: 23, minute: 30 }
+        ];
+        
+        // VIP List schedule: 10:30 AM, 10:30 PM
+        const vipSchedule = [
+            { hour: 10, minute: 30 },
+            { hour: 22, minute: 30 }
+        ];
+        
+        // Reshared Users schedule: 1:05 AM
+        const reshareSchedule = [
+            { hour: 1, minute: 5 }
+        ];
+        
+        // Update each group
+        this.updateGroupTimes('mm', mmSchedule, now);
+        this.updateGroupTimes('vip', vipSchedule, now);
+        this.updateGroupTimes('reshare', reshareSchedule, now);
+    }
+    
+    updateGroupTimes(groupId, schedule, now) {
+        const { last, next } = this.calculateUpdateTimes(schedule, now);
+        
+        // Update DOM
+        const lastElement = document.getElementById(`${groupId}-last-update`);
+        const nextElement = document.getElementById(`${groupId}-next-update`);
+        
+        if (lastElement) lastElement.textContent = this.formatUpdateTime(last);
+        if (nextElement) nextElement.textContent = this.formatUpdateTime(next);
+    }
+    
+    calculateUpdateTimes(schedule, now) {
+        const todayRuns = [];
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        // Create today's run times
+        schedule.forEach(time => {
+            const runTime = new Date(now);
+            runTime.setHours(time.hour, time.minute, 0, 0);
+            todayRuns.push(runTime);
+        });
+        
+        // Find last and next runs
+        let lastRun = null;
+        let nextRun = null;
+        
+        for (let i = 0; i < todayRuns.length; i++) {
+            if (todayRuns[i] <= now) {
+                lastRun = todayRuns[i];
+            } else {
+                nextRun = todayRuns[i];
+                break;
+            }
+        }
+        
+        // If no next run today, use tomorrow's first run
+        if (!nextRun) {
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(schedule[0].hour, schedule[0].minute, 0, 0);
+            nextRun = tomorrow;
+        }
+        
+        // If no last run today, use yesterday's last run
+        if (!lastRun) {
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            yesterday.setHours(schedule[schedule.length - 1].hour, schedule[schedule.length - 1].minute, 0, 0);
+            lastRun = yesterday;
+        }
+        
+        return { last: lastRun, next: nextRun };
+    }
+    
+    formatUpdateTime(date) {
+        const now = new Date();
+        const diffMs = Math.abs(now - date);
+        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        
+        if (date > now) {
+            // Future time
+            if (diffMinutes < 60) {
+                return `in ${diffMinutes}m`;
+            } else if (diffHours < 24) {
+                const mins = diffMinutes % 60;
+                return `in ${diffHours}h ${mins}m`;
+            } else {
+                return date.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
+            }
+        } else {
+            // Past time
+            if (diffMinutes < 60) {
+                return `${diffMinutes}m ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours}h ago`;
+            } else {
+                return date.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
+            }
+        }
+    }
+}
+
+// Global function for minimize button
+function toggleUpdateStatus() {
+    const bubble = document.getElementById('update-status-bubble');
+    const button = bubble.querySelector('.update-status-minimize');
+    
+    if (bubble.classList.contains('minimized')) {
+        bubble.classList.remove('minimized');
+        button.textContent = '−';
+    } else {
+        bubble.classList.add('minimized');
+        button.textContent = '+';
     }
 }
 
