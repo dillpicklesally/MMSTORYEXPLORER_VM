@@ -35,6 +35,9 @@ switch ($action) {
     case 'test-debug':
         echo json_encode(['message' => 'NEW API FILE IS BEING USED', 'timestamp' => date('Y-m-d H:i:s')]);
         break;
+    case 'server-time':
+        echo json_encode(['timestamp' => time()]);
+        break;
     case 'list-profile-snapshots':
         listProfileSnapshots();
         break;

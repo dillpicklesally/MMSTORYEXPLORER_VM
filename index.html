@@ -90,30 +90,43 @@
         <!-- Home View -->
         <div id="home-view" class="view">
             <!-- Update Status Bubble -->
-            <div id="update-status-bubble" class="update-status-bubble">
-                <div class="update-status-header">
-                    <span class="update-status-title">📊 Update Schedule</span>
-                    <button class="update-status-minimize" onclick="toggleUpdateStatus()">−</button>
+            <div id="update-status-bubble" class="update-status-bubble collapsed">
+                <div class="update-status-circle" onclick="toggleUpdateStatus()">
+                    <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                        <path d="M21 3v5h-5"></path>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                        <path d="M3 21v-5h5"></path>
+                    </svg>
                 </div>
                 <div class="update-status-content">
                     <div class="update-group">
-                        <div class="update-group-title">🩺 Medical Medium</div>
+                        <div class="update-group-header">
+                            <div class="status-indicator" id="mm-status"></div>
+                            <div class="update-group-title">Medical Medium</div>
+                        </div>
                         <div class="update-times">
-                            <div class="update-time">Last: <span id="mm-last-update">Calculating...</span></div>
+                            <div class="update-time last-update">Last: <span id="mm-last-update">Calculating...</span></div>
                             <div class="update-time">Next: <span id="mm-next-update">Calculating...</span></div>
                         </div>
                     </div>
                     <div class="update-group">
-                        <div class="update-group-title">⭐ VIP List</div>
+                        <div class="update-group-header">
+                            <div class="status-indicator" id="vip-status"></div>
+                            <div class="update-group-title">VIP List</div>
+                        </div>
                         <div class="update-times">
-                            <div class="update-time">Last: <span id="vip-last-update">Calculating...</span></div>
+                            <div class="update-time last-update">Last: <span id="vip-last-update">Calculating...</span></div>
                             <div class="update-time">Next: <span id="vip-next-update">Calculating...</span></div>
                         </div>
                     </div>
                     <div class="update-group">
-                        <div class="update-group-title">🔁 Reshared Users</div>
+                        <div class="update-group-header">
+                            <div class="status-indicator" id="reshare-status"></div>
+                            <div class="update-group-title">Reshared Users</div>
+                        </div>
                         <div class="update-times">
-                            <div class="update-time">Last: <span id="reshare-last-update">Calculating...</span></div>
+                            <div class="update-time last-update">Last: <span id="reshare-last-update">Calculating...</span></div>
                             <div class="update-time">Next: <span id="reshare-next-update">Calculating...</span></div>
                         </div>
                     </div>

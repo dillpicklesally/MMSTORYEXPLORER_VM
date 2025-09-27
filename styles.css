@@ -2769,8 +2769,44 @@ body {
     transition: all 0.3s ease;
 }
 
-.update-status-bubble.minimized {
-    height: 50px;
+.update-status-bubble.collapsed {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.update-status-circle {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.update-status-bubble:not(.collapsed) .update-status-circle {
+    display: none;
+}
+
+.update-status-bubble.collapsed .update-status-content {
+    display: none;
+}
+
+.refresh-icon {
+    width: 20px;
+    height: 20px;
+    stroke: #10b981;
+    transition: transform 0.3s ease;
+}
+
+.update-status-bubble.collapsed .refresh-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.update-status-bubble:hover .refresh-icon {
+    transform: rotate(180deg);
 }
 
 .update-status-header {
@@ -2828,11 +2864,60 @@ body {
     margin-bottom: 0;
 }
 
+.update-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
 .update-group-title {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 8px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    display: inline-block;
+}
+
+.status-indicator.updating {
+    background: #f59e0b;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.update-time.last-update {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.update-time.last-update.flash {
+    animation: flashGreen 2s ease-out;
+}
+
+@keyframes flashGreen {
+    0% { 
+        background: rgba(16, 185, 129, 0.3);
+        transform: scale(1.05);
+        border-radius: 4px;
+    }
+    50% { 
+        background: rgba(16, 185, 129, 0.6);
+        transform: scale(1.1);
+    }
+    100% { 
+        background: transparent;
+        transform: scale(1);
+    }
 }
 
 .update-times {

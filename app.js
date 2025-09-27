@@ -3910,8 +3910,23 @@ class StoryArchiveExplorer {
         setInterval(() => this.updateScheduleInfo(), 60000);
     }
     
-    updateScheduleInfo() {
-        const now = new Date();
+    async getServerTime() {
+        try {
+            // Try to get server time from API
+            const response = await fetch('/api.php?action=server-time');
+            if (response.ok) {
+                const data = await response.json();
+                return new Date(data.timestamp * 1000);
+            }
+        } catch (error) {
+            console.log('Server time not available, using client time');
+        }
+        // Fallback to client time
+        return new Date();
+    }
+    
+    async updateScheduleInfo() {
+        const now = await this.getServerTime();
         
         // Medical Medium schedule: 7:30 AM, 4:30 PM, 11:30 PM
         const mmSchedule = [
@@ -3943,9 +3958,51 @@ class StoryArchiveExplorer {
         // Update DOM
         const lastElement = document.getElementById(`${groupId}-last-update`);
         const nextElement = document.getElementById(`${groupId}-next-update`);
+        const statusIndicator = document.getElementById(`${groupId}-status`);
         
-        if (lastElement) lastElement.textContent = this.formatUpdateTime(last);
-        if (nextElement) nextElement.textContent = this.formatUpdateTime(next);
+        // Check if currently updating (within 5 minutes of scheduled time)
+        const isUpdating = this.isCurrentlyUpdating(schedule, now);
+        
+        if (statusIndicator) {
+            if (isUpdating) {
+                statusIndicator.classList.add('updating');
+                if (lastElement) {
+                    lastElement.textContent = 'updating now...';
+                    lastElement.parentElement.classList.add('flash');
+                }
+            } else {
+                statusIndicator.classList.remove('updating');
+                if (lastElement) {
+                    lastElement.textContent = this.formatUpdateTime(last);
+                    // Add flash animation when last update changes
+                    lastElement.parentElement.classList.add('flash');
+                    setTimeout(() => {
+                        lastElement.parentElement.classList.remove('flash');
+                    }, 2000);
+                }
+            }
+        }
+        
+        if (nextElement && !isUpdating) {
+            nextElement.textContent = this.formatUpdateTime(next);
+        }
+    }
+    
+    isCurrentlyUpdating(schedule, now) {
+        // Check if we're within 5 minutes of any scheduled run time
+        for (const time of schedule) {
+            const scheduledTime = new Date(now);
+            scheduledTime.setHours(time.hour, time.minute, 0, 0);
+            
+            const diffMs = Math.abs(now - scheduledTime);
+            const diffMinutes = diffMs / (1000 * 60);
+            
+            // If within 5 minutes of scheduled time
+            if (diffMinutes <= 5) {
+                return true;
+            }
+        }
+        return false;
     }
     
     calculateUpdateTimes(schedule, now) {
@@ -4029,18 +4086,10 @@ class StoryArchiveExplorer {
     }
 }
 
-// Global function for minimize button
+// Global function for toggle button
 function toggleUpdateStatus() {
     const bubble = document.getElementById('update-status-bubble');
-    const button = bubble.querySelector('.update-status-minimize');
-    
-    if (bubble.classList.contains('minimized')) {
-        bubble.classList.remove('minimized');
-        button.textContent = '−';
-    } else {
-        bubble.classList.add('minimized');
-        button.textContent = '+';
-    }
+    bubble.classList.toggle('collapsed');
 }
 
 // Initialize the app when the page loads
