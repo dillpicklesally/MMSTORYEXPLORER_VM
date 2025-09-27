@@ -84,6 +84,31 @@ class ServerExportHandler {
         URL.revokeObjectURL(url);
     }
 
+    formatPostDateFromStory(story) {
+        try {
+            // Extract date from filename like "username_story_20250827_01.mp4"
+            const match = story.filename.match(/_(\d{8})_/);
+            if (!match) return null;
+            
+            const dateStr = match[1]; // YYYYMMDD
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1; // Month is 0-indexed
+            const day = parseInt(dateStr.substring(6, 8));
+            
+            const date = new Date(year, month, day);
+            
+            // Format as "Sep 27, 2025"
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric', 
+                year: 'numeric'
+            });
+        } catch (error) {
+            console.warn('Failed to parse date from story filename:', story.filename, error);
+            return null;
+        }
+    }
+
     async createTransparentOverlay(story, profilePicBlob, progressInfo = null) {
         // Create transparent overlay using the exact screenshot logic but without media background
         const canvas = document.createElement('canvas');
@@ -103,9 +128,13 @@ class ServerExportHandler {
     }
 
     async drawOverlayForScreenshot(ctx, story, profilePicBlob, progressInfo = null) {
-        const profileSize = 64;
-        const profileX = 40;
-        const profileY = 30;
+        // Use smaller overlay for video posts, larger for image posts
+        const isVideo = story.type === 'video';
+        const sizeFactor = isVideo ? 0.85 : 1.0; // Reduce video overlay by 15%
+        
+        const profileSize = Math.round(72 * sizeFactor);
+        const profileX = Math.round(45 * sizeFactor);
+        const profileY = Math.round(34 * sizeFactor);
         const username = story.username;
 
         // Draw Instagram-style progress bars at the top if progress info is provided
@@ -180,22 +209,24 @@ class ServerExportHandler {
         ctx.shadowOffsetX = 1;
         ctx.shadowOffsetY = 1;
 
-        // Draw username text with Instagram-like font - much smaller size  
-        ctx.font = 'bold 24px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+        const textX = profileX + profileSize + Math.round(23 * sizeFactor);
+        const lineHeight = Math.round(32 * sizeFactor);
+        let currentY = profileY; // Align with top of avatar
+        
+        // 1. Draw username text first
+        ctx.font = `bold ${Math.round(27 * sizeFactor)}px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif`;
         ctx.fillStyle = 'white';
-        ctx.textBaseline = 'top'; // Changed from middle to top for alignment
-        
-        const textX = profileX + profileSize + 20;
-        let currentY = profileY; // Align with top of avatar circle
-        
+        ctx.textBaseline = 'top';
         ctx.fillText(username, textX, currentY);
-
-        // Handle reshare info for medicalmedium
+        
+        currentY += lineHeight; // Move to next row
+        
+        // 2. Draw reshare info second (if exists)
         if (story.reshareInfo && username === 'medicalmedium') {
             // Load and draw reshare icon PNG (colored white)
-            const iconSize = 18; // Smaller icon
+            const iconSize = Math.round(18 * sizeFactor);
             const iconX = textX;
-            const iconY = currentY + 30; // Position below username
+            const iconY = currentY + Math.round(5 * sizeFactor);
             
             try {
                 // Load the reshare icon
@@ -225,15 +256,24 @@ class ServerExportHandler {
                 console.warn('Error loading reshare icon:', error);
             }
             
-            // Draw original username text - smaller size
-            ctx.font = 'normal 20px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+            // Draw original username text
+            ctx.font = `normal ${Math.round(23 * sizeFactor)}px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif`;
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.textBaseline = 'top';
             
-            const reshareTextX = iconX + iconSize + 8; // Closer to icon
-            const reshareTextY = iconY;
+            const reshareTextX = iconX + iconSize + Math.round(8 * sizeFactor);
+            ctx.fillText(`@${story.reshareInfo.originalUser}`, reshareTextX, currentY);
             
-            ctx.fillText(`@${story.reshareInfo.originalUser}`, reshareTextX, reshareTextY);
+            currentY += lineHeight; // Move to next row
+        }
+        
+        // 3. Draw post date third (last)
+        const postDate = this.formatPostDateFromStory(story);
+        if (postDate) {
+            ctx.font = `normal ${Math.round(20 * sizeFactor)}px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.textBaseline = 'top';
+            ctx.fillText(postDate, textX, currentY);
         }
         
         // Reset shadow

@@ -55,6 +55,7 @@
     transform: rotate(0deg);
 }
 
+
 /* Light Theme Variables */
 [data-theme="light"] {
     --bg-primary: #ffffff;

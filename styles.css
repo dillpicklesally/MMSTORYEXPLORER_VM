@@ -2756,17 +2756,39 @@ body {
     position: fixed;
     top: 20px;
     right: 20px;
-    width: 320px;
-    background: rgba(20, 20, 20, 0.95);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 224px; /* 30% less than 320px */
+    background: rgba(20, 20, 20, 0.4);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
     box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        0 4px 16px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
     z-index: 1000;
     overflow: hidden;
     transition: all 0.3s ease;
+}
+
+.update-status-bubble.pulse-green {
+    animation: pulseGreenBubble 0.8s ease-out;
+}
+
+@keyframes pulseGreenBubble {
+    0% { 
+        background: rgba(20, 20, 20, 0.4);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    50% { 
+        background: rgba(16, 185, 129, 0.3);
+        border-color: rgba(16, 185, 129, 0.4);
+        transform: scale(1.02);
+    }
+    100% { 
+        background: rgba(20, 20, 20, 0.4);
+        border-color: rgba(255, 255, 255, 0.08);
+        transform: scale(1);
+    }
 }
 
 .update-status-bubble.collapsed {
@@ -2809,19 +2831,11 @@ body {
     transform: rotate(180deg);
 }
 
-.update-status-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    cursor: move;
-}
-
 .update-status-title {
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
+    margin: 0 0 16px 0;
 }
 
 .update-status-minimize {
@@ -2844,10 +2858,41 @@ body {
 }
 
 .update-status-content {
-    padding: 16px 20px;
+    padding: 16px 20px 16px 20px;
     max-height: 400px;
     overflow-y: auto;
-    transition: all 0.3s ease;
+    position: relative;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.update-status-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+}
+
+.close-bubble-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-secondary);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.close-bubble-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
 }
 
 .update-status-bubble.minimized .update-status-content {
@@ -2900,24 +2945,8 @@ body {
     font-weight: 600;
 }
 
-.update-time.last-update.flash {
-    animation: flashGreen 2s ease-out;
-}
-
-@keyframes flashGreen {
-    0% { 
-        background: rgba(16, 185, 129, 0.3);
-        transform: scale(1.05);
-        border-radius: 4px;
-    }
-    50% { 
-        background: rgba(16, 185, 129, 0.6);
-        transform: scale(1.1);
-    }
-    100% { 
-        background: transparent;
-        transform: scale(1);
-    }
+.update-time.last-update span {
+    color: #10b981;
 }
 
 .update-times {
@@ -2943,4 +2972,43 @@ body {
         top: 10px;
         width: 280px;
     }
+}
+
+/* Content Loading Spinner */
+.dates-grid {
+    position: relative;
+    min-height: 400px;
+}
+
+.content-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}
+
+.content-loading-spinner {
+    margin-bottom: 16px;
+}
+
+.content-loading-spinner svg {
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+    stroke: var(--text-secondary);
+}
+
+.content-loading-text {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }

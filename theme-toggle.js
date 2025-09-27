@@ -10,7 +10,7 @@
 
     let currentTheme = THEMES.DARK;
 
-    // Get theme preference from localStorage or system preference
+    // Get theme preference from localStorage or default to dark
     function getInitialTheme() {
         const savedTheme = localStorage.getItem(THEME_KEY);
         
@@ -18,11 +18,7 @@
             return savedTheme;
         }
 
-        // Check system preference
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-            return THEMES.LIGHT;
-        }
-
+        // Always default to dark mode
         return THEMES.DARK;
     }
 
@@ -61,9 +57,8 @@
 
     // Initialize theme toggle
     function init() {
-        // Apply initial theme
-        const initialTheme = getInitialTheme();
-        applyTheme(initialTheme);
+        // Always start with dark mode as default
+        applyTheme(THEMES.DARK);
 
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {

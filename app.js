@@ -149,45 +149,29 @@ class StoryArchiveExplorer {
     }
     
     async tryAutoLoad() {
-        this.showNFSLoading();
+        // Show home view immediately
+        this.showHomeView();
+        
+        // Start loading timer
+        const loadingStartTime = Date.now();
+        this.startLoadingTimer();
         
         try {
             // Check if server mode is enabled
             if (!window.SERVER_CONFIG || !window.SERVER_CONFIG.SERVER_MODE) {
                 alert('Server mode is not enabled. Please use "Choose Different Folder" to browse your files.');
-                this.hideNFSLoading();
                 return;
             }
-
-            // Hide NFS loading and show main loading overlay
-            this.hideNFSLoading();
-            this.showLoading('Connecting to server archive...');
-            
-            // Update progress
-            this.updateProgress(10, 'Clearing existing data...');
             
             // Clear existing data
             this.archives.clear();
             this.userStories.clear();
             this.profileSnapshots.clear();
             
-            // Update progress
-            this.updateProgress(15, 'Loading avatars...');
-            
-            // Load avatars from server
+            // Load data in background
             await this.loadAvatarsFromServer();
-            
-            // Update progress
-            this.updateProgress(20, 'Loading profile snapshots...');
-            
-            // Load profile snapshots from server
             await this.loadProfileSnapshotsFromServer();
-            
-            // Load reshared users' stories from server
             await this.loadResharedUsersStoriesFromServer();
-            
-            // Update progress
-            this.updateProgress(30, 'Loading available dates...');
             
             // Load dates from server
             const dates = await this.loadDatesFromServer();
@@ -195,11 +179,7 @@ class StoryArchiveExplorer {
                 throw new Error('No archive dates found on server');
             }
             
-            // Update progress
-            this.updateProgress(45, 'Loading stories from archive...');
-            
             // Load all stories from all dates
-            let totalLoaded = 0;
             for (let i = 0; i < dates.length; i++) {
                 const date = dates[i];
                 const stories = await this.loadStoriesFromServer(date);
@@ -207,39 +187,45 @@ class StoryArchiveExplorer {
                 if (stories && stories.length > 0) {
                     // Process stories for this date
                     this.processServerStories(date, stories);
-                    totalLoaded += stories.length;
                 }
-                
-                // Update progress based on dates processed
-                const progress = 40 + Math.round((i + 1) / dates.length * 40);
-                this.updateProgress(progress, `Processed ${totalLoaded} stories from ${i + 1}/${dates.length} dates...`);
             }
             
-            // Update progress
-            this.updateProgress(90, 'Finalizing...');
-            
             if (this.archives.size === 0) {
-                this.hideLoading();
                 alert('No story archives found in the server directory. Please check your archive path.');
                 return;
             }
             
-            
-            // Update progress
-            this.updateProgress(100, 'Complete!');
-            
-            // Switch to the main view
-            this.showHomeView();
-            
-            // Hide loading overlay
-            setTimeout(() => {
-                this.hideLoading();
-            }, 500);
+            // Stop loading timer and re-render views with loaded data
+            this.stopLoadingTimer();
+            this.renderDatesList();
+            this.renderUsersList();
+            this.renderProfilesList();
+            this.renderReshareAnalytics();
+            this.renderResharesByUser();
+            this.renderResharedUsersStories();
             
         } catch (error) {
             console.error('Auto-load failed:', error);
-            this.hideLoading();
+            this.stopLoadingTimer();
             alert(`Could not load archive from server: ${error.message}\n\nPlease use "Choose Different Folder" to browse your files.`);
+        }
+    }
+    
+    startLoadingTimer() {
+        this.loadingStartTime = Date.now();
+        this.loadingTimerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this.loadingStartTime) / 1000);
+            const loadingText = document.querySelector('.content-loading-text');
+            if (loadingText) {
+                loadingText.textContent = `Loading from server...(${elapsed}s)`;
+            }
+        }, 1000);
+    }
+    
+    stopLoadingTimer() {
+        if (this.loadingTimerInterval) {
+            clearInterval(this.loadingTimerInterval);
+            this.loadingTimerInterval = null;
         }
     }
     
@@ -881,12 +867,10 @@ class StoryArchiveExplorer {
             homeView.classList.add('active');
         }
         
-        this.renderDatesList();
-        this.renderUsersList();
-        this.renderProfilesList();
-        this.renderReshareAnalytics();
-        this.renderResharesByUser();
-        this.renderResharedUsersStories();
+        // Auto-open bubble after view is visible
+        setTimeout(() => {
+            this.showUpdateBubble();
+        }, 500);
     }
     
     renderDatesList(sortType = 'newest') {
@@ -2494,10 +2478,35 @@ class StoryArchiveExplorer {
         return { x, y, width, height };
     }
     
+    formatPostDateFromStory(story) {
+        try {
+            // Extract date from filename like "username_story_20250827_01.mp4"
+            const match = story.filename.match(/_(\d{8})_/);
+            if (!match) return null;
+            
+            const dateStr = match[1]; // YYYYMMDD
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1; // Month is 0-indexed
+            const day = parseInt(dateStr.substring(6, 8));
+            
+            const date = new Date(year, month, day);
+            
+            // Format as "Sep 27, 2025"
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric', 
+                year: 'numeric'
+            });
+        } catch (error) {
+            console.warn('Failed to parse date from story filename:', story.filename, error);
+            return null;
+        }
+    }
+    
     async drawOverlayForScreenshot(ctx, story, profilePicBlob) {
-        const profileSize = 64;
-        const profileX = 40;
-        const profileY = 60;
+        const profileSize = 83; // 72 * 1.15 ≈ 83
+        const profileX = 49; // 43 * 1.15 ≈ 49
+        const profileY = 68; // 59 * 1.15 ≈ 68
         const username = story.username;
 
         // Draw profile picture with circle mask
@@ -2531,12 +2540,7 @@ class StoryArchiveExplorer {
                     ctx.drawImage(profileImg, profileX, profileY, profileSize, profileSize);
                     ctx.restore();
 
-                    // Add white border around profile picture
-                    ctx.strokeStyle = 'white';
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.arc(profileX + profileSize/2, profileY + profileSize/2, profileSize/2, 0, Math.PI * 2);
-                    ctx.stroke();
+                    // No border around profile picture (Instagram style)
                 } else {
                     // Draw placeholder circle if profile image failed to load
                     ctx.fillStyle = '#333';
@@ -2544,9 +2548,7 @@ class StoryArchiveExplorer {
                     ctx.arc(profileX + profileSize/2, profileY + profileSize/2, profileSize/2, 0, Math.PI * 2);
                     ctx.fill();
 
-                    ctx.strokeStyle = 'white';
-                    ctx.lineWidth = 4;
-                    ctx.stroke();
+                    // No border on placeholder circle
                 }
             } catch (error) {
                 console.warn('Error processing profile image for screenshot:', error);
@@ -2556,9 +2558,7 @@ class StoryArchiveExplorer {
                 ctx.arc(profileX + profileSize/2, profileY + profileSize/2, profileSize/2, 0, Math.PI * 2);
                 ctx.fill();
 
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 4;
-                ctx.stroke();
+                // No border on error placeholder circle
             }
         } else {
             // Draw placeholder circle if no profile picture
@@ -2567,9 +2567,7 @@ class StoryArchiveExplorer {
             ctx.arc(profileX + profileSize/2, profileY + profileSize/2, profileSize/2, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 6;
-            ctx.stroke();
+            // No border on placeholder circle when no profile picture
         }
 
         // Set up very prominent drop shadow for video overlay
@@ -2578,26 +2576,28 @@ class StoryArchiveExplorer {
         ctx.shadowOffsetX = 4;
         ctx.shadowOffsetY = 4;
 
-        // Draw username text with Instagram-like font
-        ctx.font = 'bold 29px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+        const textX = profileX + profileSize + 24; // 21 * 1.15 ≈ 24
+        const lineHeight = 37; // 32 * 1.15 ≈ 37
+        let currentY = profileY; // Align with top of avatar
+        
+        // 1. Draw username text first
+        ctx.font = 'bold 39px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif'; // 34 * 1.15 ≈ 39
         ctx.fillStyle = 'white';
-        ctx.textBaseline = 'middle';
-        
-        const textX = profileX + profileSize + 20;
-        let currentY = profileY + profileSize/2;
-        
+        ctx.textBaseline = 'top';
         ctx.fillText(username, textX, currentY);
-
-        // Handle reshare info for medicalmedium
+        
+        currentY += lineHeight; // Move to next row
+        
+        // 2. Draw reshare info second (if exists)
         if (story.reshareInfo && username === 'medicalmedium') {
             // Draw reshare icon
-            const iconSize = 24;
+            const iconSize = 23; // 20 * 1.15 = 23
             const iconX = textX;
-            const iconY = currentY + 40;
+            const iconY = currentY + 5; // Small offset to vertically center icon
             
             // Draw a simple reshare/repost icon (curved arrow)
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             
@@ -2611,15 +2611,24 @@ class StoryArchiveExplorer {
             ctx.lineTo(iconX + iconSize/2 + iconSize/4, iconY + iconSize/4);
             ctx.stroke();
             
-            // Draw original username text with Instagram-like font
-            ctx.font = 'normal 24px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+            // Draw original username text
+            ctx.font = 'normal 33px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif'; // 29 * 1.15 ≈ 33
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.textBaseline = 'middle';
+            ctx.textBaseline = 'top';
             
-            const reshareTextX = iconX + iconSize + 10;
-            const reshareTextY = iconY + iconSize/2;
+            const reshareTextX = iconX + iconSize + 9; // 8 * 1.15 ≈ 9
+            ctx.fillText(`@${story.reshareInfo.originalUser}`, reshareTextX, currentY);
             
-            ctx.fillText(`@${story.reshareInfo.originalUser}`, reshareTextX, reshareTextY);
+            currentY += lineHeight; // Move to next row
+        }
+        
+        // 3. Draw post date third (last)
+        const postDate = this.formatPostDateFromStory(story);
+        if (postDate) {
+            ctx.font = 'normal 29px "Proxima Nova", "Helvetica Neue", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif'; // 25 * 1.15 ≈ 29
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.textBaseline = 'top';
+            ctx.fillText(postDate, textX, currentY);
         }
         
         // Reset shadow
@@ -3904,10 +3913,56 @@ class StoryArchiveExplorer {
         }
     }
     
-    initializeUpdateStatus() {
+    initializeUpdateStatus() {        
         this.updateScheduleInfo();
         // Update every minute
         setInterval(() => this.updateScheduleInfo(), 60000);
+    }
+    
+    showUpdateBubble() {
+        const bubble = document.getElementById('update-status-bubble');
+        const content = bubble.querySelector('.update-status-content');
+        
+        if (bubble.classList.contains('collapsed')) {
+            // Start expanding the bubble
+            bubble.classList.remove('collapsed');
+            bubble.classList.add('pulse-green');
+            
+            // Show content after bubble width transition completes (300ms)
+            setTimeout(() => {
+                content.style.opacity = '1';
+                content.style.visibility = 'visible';
+            }, 300);
+            
+            // Remove pulse animation after it completes
+            setTimeout(() => {
+                bubble.classList.remove('pulse-green');
+            }, 800);
+            
+            // Auto-close after 3 seconds
+            setTimeout(() => {
+                this.closeBubble();
+            }, 3000);
+        }
+    }
+    
+    closeBubble() {
+        const bubble = document.getElementById('update-status-bubble');
+        const content = bubble.querySelector('.update-status-content');
+        
+        // Hide content first
+        content.style.opacity = '0';
+        content.style.visibility = 'hidden';
+        
+        // Collapse bubble after content fades out
+        setTimeout(() => {
+            bubble.classList.add('collapsed');
+            // Reset for next time
+            setTimeout(() => {
+                content.style.opacity = '';
+                content.style.visibility = '';
+            }, 300);
+        }, 200);
     }
     
     async getServerTime() {
@@ -4055,32 +4110,31 @@ class StoryArchiveExplorer {
         const diffMinutes = Math.floor(diffMs / (1000 * 60));
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
         
+        // Get the actual time in AM/PM format
+        const actualTime = date.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+        });
+        
         if (date > now) {
             // Future time
             if (diffMinutes < 60) {
-                return `in ${diffMinutes}m`;
+                return `in ${diffMinutes}m (${actualTime})`;
             } else if (diffHours < 24) {
                 const mins = diffMinutes % 60;
-                return `in ${diffHours}h ${mins}m`;
+                return `in ${diffHours}h ${mins}m (${actualTime})`;
             } else {
-                return date.toLocaleTimeString('en-US', { 
-                    hour: 'numeric', 
-                    minute: '2-digit',
-                    hour12: true 
-                });
+                return actualTime;
             }
         } else {
             // Past time
             if (diffMinutes < 60) {
-                return `${diffMinutes}m ago`;
+                return `${diffMinutes}m ago (${actualTime})`;
             } else if (diffHours < 24) {
-                return `${diffHours}h ago`;
+                return `${diffHours}h ago (${actualTime})`;
             } else {
-                return date.toLocaleTimeString('en-US', { 
-                    hour: 'numeric', 
-                    minute: '2-digit',
-                    hour12: true 
-                });
+                return actualTime;
             }
         }
     }
@@ -4089,12 +4143,27 @@ class StoryArchiveExplorer {
 // Global function for toggle button
 function toggleUpdateStatus() {
     const bubble = document.getElementById('update-status-bubble');
-    bubble.classList.toggle('collapsed');
+    const content = bubble.querySelector('.update-status-content');
+    
+    if (bubble.classList.contains('collapsed')) {
+        // Opening the bubble
+        bubble.classList.remove('collapsed');
+        
+        // Show content after bubble width transition completes (300ms)
+        setTimeout(() => {
+            content.style.opacity = '1';
+            content.style.visibility = 'visible';
+        }, 300);
+    } else {
+        // Closing the bubble
+        window.storyExplorer.closeBubble();
+    }
 }
 
 // Initialize the app when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     const app = new StoryArchiveExplorer();
+    window.storyExplorer = app;
     
     // Auto-load if configured
     if (window.SERVER_CONFIG && window.SERVER_CONFIG.AUTO_LOAD && window.SERVER_CONFIG.SERVER_MODE) {
